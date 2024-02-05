@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - "*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_BUILDKIT: 1
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    name: Build for Windows
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21.x
+      - name: Build binaries for Windows
+        run: |
+          $env:OUTPUT_DIR = "${{ github.workspace }}\builds"
+          mkdir $env:OUTPUT_DIR
+          make artifacts-windows PREFIX=$env:OUTPUT_DIR
+
+  build-linux:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    name: Build for Linux
+    env:
+      OUTPUT_DIR: ${{ github.workspace }}/builds
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.21.x
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build binaries
+        run: |
+          PREFIX=${OUTPUT_DIR} make artifacts
+      - name: Build wasm image
+        run: |
+          PREFIX=${OUTPUT_DIR} make c2w-net-proxy.wasm
+      - name: sha256sum
+        run: |
+          ( cd ${OUTPUT_DIR}; sha256sum * ) > "${GITHUB_WORKSPACE}/SHA256SUMS"
+          mv "${GITHUB_WORKSPACE}/SHA256SUMS" "${OUTPUT_DIR}/SHA256SUMS"

@@ -1,21 +1,12 @@
-name: Build
+name: CICD
 
 on:
   pull_request:
     branches:
       - "*"
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  DOCKER_BUILDKIT: 1
-
-permissions:
-  contents: write
-
 jobs:
   build-windows:
-    if: github.event_name == 'pull_request'
     runs-on: windows-latest
     name: Build for Windows
     steps:
@@ -25,14 +16,15 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.21.x
+      - name: Install 7-Zip
+        run: choco install 7zip
       - name: Build binaries for Windows
         run: |
           $env:OUTPUT_DIR = "${{ github.workspace }}\builds"
           mkdir $env:OUTPUT_DIR
-          make artifacts-windows PREFIX=$env:OUTPUT_DIR
+          make windows-artifacts PREFIX=$env:OUTPUT_DIR
 
   build-linux:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     name: Build for Linux
     env:
@@ -45,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Build binaries
         run: |
-          PREFIX=${OUTPUT_DIR} make artifacts
+          PREFIX=${OUTPUT_DIR} make linux-artifacts
       - name: Build wasm image
         run: |
           PREFIX=${OUTPUT_DIR} make c2w-net-proxy.wasm

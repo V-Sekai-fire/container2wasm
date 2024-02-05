@@ -44,10 +44,10 @@ linux-artifacts:
 
 windows-artifacts:
 	GOOS=windows GOARCH=amd64 make c2w-windows-amd64
-	zip -j $(PREFIX)/container2wasm-$(VERSION)-windows-amd64.zip $(PREFIX)/c2w.exe
+	7z a -tzip $(PREFIX)/container2wasm-$(VERSION)-windows-amd64.zip $(PREFIX)/c2w.exe
 
 	rm -f $(PREFIX)/c2w.exe
-
+	
 test:
 	./tests/test.sh
 

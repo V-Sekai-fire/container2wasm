@@ -18,6 +18,9 @@ c2w:
 c2w-net:
 	CGO_ENABLED=0 go build -o $(PREFIX)/c2w-net $(GO_LD_FLAGS) $(GO_BUILDTAGS) -v ./cmd/c2w-net
 
+c2w-windows-amd64:
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o $(PREFIX)/c2w.exe $(GO_LD_FLAGS) $(GO_BUILDTAGS) -v ./cmd/c2w
+
 c2w-net-proxy.wasm:
 	cd extras/c2w-net-proxy/ ; GOOS=wasip1 GOARCH=wasm go build -o $(PREFIX)/c2w-net-proxy.wasm .
 
@@ -28,7 +31,9 @@ install:
 	install -D -m 755 $(PREFIX)/c2w $(CMD_DESTDIR)/bin
 	install -D -m 755 $(PREFIX)/c2w-net $(CMD_DESTDIR)/bin
 
-artifacts: clean
+artifacts: clean windows-artifacts linux-artifacts
+
+linux-artifacts:
 	GOOS=linux GOARCH=amd64 make c2w c2w-net
 	tar -C $(PREFIX) --owner=0 --group=0 -zcvf $(PREFIX)/container2wasm-$(VERSION)-linux-amd64.tar.gz c2w c2w-net
 
@@ -37,6 +42,12 @@ artifacts: clean
 
 	rm -f $(PREFIX)/c2w $(PREFIX)/c2w-net
 
+windows-artifacts:
+	GOOS=windows GOARCH=amd64 make c2w-windows-amd64
+	7z a -tzip $(PREFIX)/container2wasm-$(VERSION)-windows-amd64.zip $(PREFIX)/c2w.exe
+
+	rm -f $(PREFIX)/c2w.exe
+	
 test:
 	./tests/test.sh
 
